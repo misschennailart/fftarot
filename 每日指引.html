@@ -8,7 +8,7 @@
   <!-- 載入 Tailwind CSS 樣式庫 -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- 載入 React 核心套件 (讓程式碼可以直接在 HTML 執行) -->
+  <!-- 載入 React 核心套件 -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -26,10 +26,8 @@
   </style>
 </head>
 <body>
-  <!-- 應用程式渲染的目標容器 -->
   <div id="root"></div>
 
-  <!-- 主要程式碼邏輯 -->
   <script type="text/babel">
     const { useState, useEffect } = React;
 
@@ -74,10 +72,9 @@
       'King': '國王象徵外在的掌控、權威、成就與領導力。'
     };
 
-    // === 塔羅牌資料庫生成 (78張完整牌組) ===
+    // === 塔羅牌資料庫生成 ===
     const generateDeck = () => {
       const deck = [
-        // --- 大阿爾克那 (Major Arcana) 0-21 ---
         { id: 0, numeral: '0', name: '愚者', en: 'The Fool', keywords: '新的開始、純真、冒險、無限潛力', description: '放下過去的包袱，帶著輕鬆的心情踏上新的旅程。這是一段不計後果、相信宇宙安排的純粹冒險，請保持開放與好奇。', symbol: '🌟', advice: '保持開放的心態，不要害怕未知的改變，勇敢邁出第一步。', element: 'Major', rank: '0' },
         { id: 1, numeral: 'I', name: '魔術師', en: 'The Magician', keywords: '創造力、意志力、顯化、資源', description: '你已經具備了實現夢想的所有工具與資源。現在是採取行動、將想法化為現實的絕佳時刻，宇宙的能量正為你所用。', symbol: '🌟', advice: '善用您現有的資源與才華，主動出擊去創造屬於你的機會。', element: 'Major', rank: '1' },
         { id: 2, numeral: 'II', name: '女祭司', en: 'The High Priestess', keywords: '直覺、潛意識、內在智慧、靜止', description: '向內尋求答案。現在不適合急躁行動，而是應該靜下來，傾聽你內在的聲音與直覺，有些隱藏的真相正在浮現。', symbol: '🌟', advice: '相信您的直覺與潛意識，答案其實已經在您的心中。', element: 'Major', rank: '2' },
@@ -128,7 +125,7 @@
           { k: '防禦、堅持、挑戰、信念', d: '你處於一個有利的位置，但也面臨著挑戰或競爭者的攻擊。你有能力堅守陣地，捍衛自己的立場。', a: '堅持你的信念與立場，不要輕易退縮，你有足夠的力量抵禦外敵。' },
           { k: '迅速、行動、變化、消息', d: '事情正在極速發展，障礙已經消除。這象徵著迅速的行動、旅行，或是有重要消息即將飛快傳來。', a: '準備好迎接快速的變動，把握時機，果斷行動，不要拖延。' },
           { k: '疲憊、堅持、防禦、韌性', d: '你經歷了許多戰鬥，感到疲憊且充滿戒心。但你已經具備了足夠的經驗與韌性，這是最後的考驗。', a: '咬緊牙關撐過這最後一關，你的經驗會保護你，勝利就在眼前。' },
-          { k: '負擔、壓力、責任、過勞', d: '你承擔了過多的責任與壓力，雖然已經接近目標，但過程讓你感到喘不過氣。', a: '學會放下不必要的負擔，適時尋求幫助或重新分配工作，不要硬撐。' },
+          { k: '負擔、壓力、責任、過勞', d: '你承擔了過多的責任與壓力，雖然已經接近目標，遇到過程讓你感到喘不過氣。', a: '學會放下不必要的負擔，適時尋求幫助或重新分配工作，不要硬撐。' },
           { k: '消息、熱情、探索、新點子', d: '一個充滿好奇心與熱情的新開始。你可能獲得了新的靈感，或是收到令人興奮的消息。', a: '擁抱你內心的小孩，對新事物保持熱忱與探索的勇氣。' },
           { k: '衝動、行動、冒險、熱血', d: '充滿活力的行動派，準備全速前進。這代表著一股強烈的衝勁，但也可能缺乏周全的計畫。', a: '帶著熱情行動是好事，但在衝刺前，請確認你的方向是否正確。' },
           { k: '自信、熱情、魅力、獨立', d: '充滿自信、獨立且具有魅力的狀態。你散發著溫暖的影響力，能夠堅定且熱情地掌控生活。', a: '展現你的自信與魅力，相信自己的能力，熱情地對待身邊的人事物。' },
@@ -184,7 +181,6 @@
         ]
       };
 
-      // 動態寫入小阿爾克那
       Object.keys(minorContent).forEach(suitKey => {
         minorContent[suitKey].forEach((content, index) => {
           const rankInfo = ranksList[index];
@@ -208,7 +204,6 @@
 
     const FULL_DECK = generateDeck();
 
-    // === 共通組件：優雅幾何卡背 ===
     const CardBack = ({ className = "" }) => (
       <div className={`relative w-full h-full bg-[#FDF6E3] p-1.5 shadow-sm flex flex-col items-center ${className}`}>
         <div className="w-full h-full border-2 border-double border-[#8B7355] flex flex-col items-center justify-center relative bg-opacity-50 overflow-hidden"
@@ -220,7 +215,6 @@
       </div>
     );
 
-    // === 共通組件：傳統偉特卡面 ===
     const CardFront = ({ card }) => (
       <div className="relative w-full h-full bg-[#FDF6E3] p-2 shadow-xl flex flex-col items-center">
         <div className="w-full h-full border-2 border-double border-[#8B7355] flex flex-col items-center justify-center p-3 bg-opacity-50 overflow-hidden relative"
@@ -246,7 +240,6 @@
       </div>
     );
 
-    // === 主要應用程式 ===
     function App() {
       const [step, setStep] = useState('home');
       const [isFading, setIsFading] = useState(false);
@@ -268,6 +261,21 @@
       const handleStart = () => {
         setPickedCard(null);
         transitionTo('meditation', 800);
+      };
+
+      const handleSkipMeditation = () => {
+        setIsFading(true);
+        setTimeout(() => {
+          const shuffled = [...FULL_DECK].sort(() => Math.random() - 0.5);
+          const fanned = shuffled.slice(0, 21).map((card, i) => ({
+            card,
+            isSelected: false,
+            uniqueId: `fan-${i}`
+          }));
+          setFanCards(fanned);
+          setStep('fanning');
+          setIsFading(false);
+        }, 300);
       };
 
       useEffect(() => {
@@ -337,11 +345,7 @@
         const numMeaning = card.element !== 'Major' ? (numerologyData[card.rank] || '') : '';
 
         return (
-          <div className="text-[#5C4033] leading-loose tracking-wide text-justify text-sm space-y-6 mt-4 border-t border-[#D2B48C]/30 pt-6">
-            <p className="text-lg font-bold text-[#B8860B] text-center">
-              今日為您抽出的牌卡是「{card.name} ({card.en})」
-            </p>
-
+          <div className="text-[#5C4033] leading-loose tracking-wide text-justify text-sm space-y-6 mt-2 pt-2">
             <div>
               <h5 className="text-[#B8860B] font-bold border-b border-[#D2B48C]/30 pb-2 mb-3 flex items-center gap-2">
                 <span className="text-sm">✦</span> 核心牌義
@@ -391,9 +395,10 @@
       };
 
       return (
-        <div className="w-full h-full">
+        <div className="w-full h-full relative">
+          
           {step !== 'home' && (
-            <div className="fixed top-0 left-0 w-full bg-[#FAF7F2]/90 backdrop-blur-md z-[100] px-4 py-3 md:px-8 flex justify-between items-center">
+            <div className="fixed top-0 left-0 w-full bg-[#FAF7F2]/90 backdrop-blur-md z-[100] px-4 py-3 md:px-8 flex justify-between items-center shadow-sm">
               <div 
                 className="text-[#B8860B] font-bold tracking-widest text-lg cursor-pointer hover:opacity-80 transition-opacity" 
                 onClick={handleReset}
@@ -440,8 +445,9 @@
             )}
 
             {step === 'meditation' && (
-              <div className="flex flex-col items-center justify-center w-full text-center flex-grow">
-                <div className="relative w-48 h-48 flex items-center justify-center mb-12">
+              <>
+                <div className="flex flex-col items-center justify-center w-full text-center flex-grow">
+                  <div className="relative w-48 h-48 flex items-center justify-center mb-12">
                   <div 
                     className={`absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(210,180,140,0.3)_0%,transparent_70%)] transition-transform duration-[4000ms] ease-in-out ${breathPhase === 'inhale' ? 'scale-150 opacity-80' : 'scale-75 opacity-30'}`}
                   ></div>
@@ -454,16 +460,26 @@
                   {breathText}
                 </p>
               </div>
-            )}
+              
+              {/* 呼吸階段右下角 SKIP 按鈕 (線條箭頭) */}
+              <button 
+                onClick={handleSkipMeditation}
+                className="fixed bottom-8 right-6 md:bottom-12 md:right-12 z-[100] px-4 py-2 text-[#8B7355] rounded-full hover:bg-[#FDF6E3] hover:text-[#5C4033] transition-all duration-300 text-2xl font-light flex items-center justify-center group"
+              >
+                <span className="group-hover:translate-x-1 transition-transform duration-500">→</span>
+              </button>
+            </>
+          )}
 
-            {step === 'fanning' && (
-              <div className="flex flex-col items-center justify-between w-full h-full flex-grow mt-2 max-w-5xl">
+          {step === 'fanning' && (
+            <div className="flex flex-col items-center justify-center w-full h-full flex-grow mt-4 md:mt-8 max-w-5xl gap-10 md:gap-16 pt-8 pb-20">
                 <div className="flex flex-col items-center w-full">
                   <h3 className="text-[#8B7355] tracking-widest mb-2 text-base md:text-lg italic opacity-80">【每日指引】</h3>
-                  <p className="text-[#B8860B] tracking-widest mb-6 text-sm">
+                  <p className="text-[#B8860B] tracking-widest mb-4 text-sm">
                     請憑直覺，抽取一張牌
                   </p>
-                  <div className="flex justify-center min-h-[8rem] md:min-h-[10rem]">
+                  
+                  <div className="flex justify-center min-h-[6rem] md:min-h-[10rem]">
                     <div className="w-16 h-24 md:w-24 md:h-36 border-2 border-dashed border-[#D2B48C]/50 rounded-md flex flex-col items-center justify-center relative bg-[#FAF7F2]/30 mt-4">
                       {pickedCard && (
                          <div className="absolute inset-0 animate-[fadeIn_0.5s_ease-in-out]">
@@ -474,14 +490,15 @@
                   </div>
                 </div>
                 
-                <div className="relative w-full max-w-4xl h-56 md:h-72 flex justify-center items-end mt-auto mb-10 overflow-visible">
+                <div className="relative w-full max-w-lg h-48 md:h-64 flex justify-center items-end overflow-visible">
                   {fanCards.map((item, index) => {
                     const totalCards = fanCards.length;
                     const centerIndex = (totalCards - 1) / 2;
                     const offset = index - centerIndex;
-                    const angle = offset * 3.5; 
-                    const x = offset * 18; 
-                    const y = Math.pow(offset, 2) * 0.8; 
+                    // 調整扇形弧度 (將 y 偏移量縮小，角度放緩)
+                    const angle = offset * 2.5; 
+                    const x = offset * 15; 
+                    const y = Math.pow(offset, 2) * 0.4; 
                     const isHidden = item.isSelected;
 
                     return (
@@ -505,20 +522,19 @@
 
             {step === 'result' && pickedCard && (
               <div className="flex flex-col items-center w-full max-w-5xl mx-auto py-4 md:py-8">
-                <div className="text-center mb-8 w-full max-w-2xl px-4">
-                  <p className="text-[#8B7355] tracking-widest text-sm mb-3">— 宇宙給您的專屬指引 —</p>
-                  <h3 className="text-[#5C4033] text-lg md:text-xl font-medium tracking-widest leading-relaxed">
-                    【 每日指引 】
-                  </h3>
-                </div>
+                
+                {/* ======= 解析結果可見區塊 ======= */}
+                <div className="flex flex-col items-center w-full max-w-2xl px-4 py-8 bg-[#FAF7F2] rounded-3xl">
+                  <div className="text-center mb-8 w-full">
+                    <p className="text-[#8B7355] tracking-widest text-sm mb-3">— 宇宙給您的專屬指引 —</p>
+                  </div>
 
-                <div className="flex flex-col items-center w-full max-w-2xl px-4">
-                  <div className="relative w-64 h-96 md:w-72 md:h-[27rem] transform transition-transform hover:scale-105 duration-700 mb-8">
+                  <div className="relative w-64 h-96 md:w-72 md:h-[27rem] mb-8">
                     <CardFront card={pickedCard} />
                   </div>
 
                   <div className="bg-white/60 p-6 md:p-8 rounded-2xl shadow-sm border border-[#E8DCC4]/50 w-full flex flex-col">
-                    <div className="text-center mb-4 border-b border-[#D2B48C]/20 pb-6">
+                    <div className="text-center mb-4 pb-2">
                       <h4 className="text-[#B8860B] text-2xl md:text-3xl tracking-widest font-bold mb-4">
                         {pickedCard.name}
                       </h4>
@@ -530,7 +546,6 @@
                         ))}
                       </div>
                     </div>
-                    
                     <div className="text-justify">
                       {generateDynamicReading(pickedCard)}
                     </div>
@@ -546,12 +561,14 @@
                    </div>
                 </div>
 
-                <button 
-                  onClick={handleReset}
-                  className="mt-12 px-10 py-3 bg-transparent text-[#8B7355] border border-[#D2B48C] rounded-full hover:bg-[#FDF6E3] hover:text-[#B8860B] transition-all duration-500 tracking-widest shadow-sm focus:outline-none mb-8"
-                >
-                  心懷感激，結束占卜
-                </button>
+                <div className="flex flex-col w-full max-w-sm justify-center items-center mt-12 mb-8 px-4">
+                  <button 
+                    onClick={handleReset}
+                    className="w-full px-10 py-3 bg-transparent text-[#8B7355] border border-[#D2B48C] rounded-full hover:bg-[#FDF6E3] hover:text-[#B8860B] transition-all duration-500 tracking-widest shadow-sm focus:outline-none"
+                  >
+                    心懷感激，結束占卜
+                  </button>
+                </div>
               </div>
             )}
 
@@ -560,7 +577,6 @@
       );
     }
 
-    // 將 App 渲染到畫面上
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
