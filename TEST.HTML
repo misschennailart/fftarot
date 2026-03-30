@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <!-- 1. 確保編碼在最前面 -->
+  <meta charset="UTF-8">
+  <!-- 2. 禁止縮放，讓它更像 App 的操作體驗 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>FF tarot 每日療癒指引</title>
+  
+  <!-- ================= 加入桌面的關鍵設定 ================= -->
+  <!-- 3. iOS 桌面圖示 (強烈建議將圖檔轉為 PNG 格式) -->
+  <link rel="apple-touch-icon" href="images/FFTAROT.png">
+  <link rel="icon" href="images/FFTAROT.png">
+  
+  <!-- 4. 讓它看起來像原生 App (隱藏 Safari 網址列) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="FF tarot">
+  <!-- ====================================================== -->
+
+  <!-- 載入 Tailwind CSS 樣式庫 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- 載入 React 核心套件 -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #FAF7F2;
+      /* 防止在 iOS 上長按文字反白，更像 App */
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // === 每日指引專屬資料 ===
+    const luckyColors = ['晨曦黃', '薄荷綠', '玫瑰石英粉', '寧靜藍', '珍珠白', '薰衣草紫', '大地棕', '珊瑚橘', '深海藍', '翡翠綠'];
+    const healingQuotes = [
+      '每一次呼吸，都是宇宙給予的全新機會。',
+      '放下不必要的執著，你會發現手中握著更多的自由。',
+      '溫柔地對待自己，你比想像中還要勇敢。',
+      '所有的發生，都是為了引領你走向更好的地方。',
+      '在靜默中傾聽，內心的聲音會為你指路。',
+      '相信過程，花朵有它自己綻放的時間。',
+      '你的存在本身，就是一份獨一無二的禮物。',
+      '用愛去擁抱不完美，那是光照進來的地方。',
+      '給自己一點時間，慢慢來，比較快。',
+      '今天的你，已經做得很努力、很好了。'
+    ];
+
+    // === 元素與數字學解析資料庫 ===
+    const elementData = {
+      'Major': '大阿爾克那代表宇宙的法則與重大課題。請以更宏觀的視角看待今日的處境。',
+      'Wands': '權杖對應「火元素」，象徵行動力與熱情。宇宙呼喚您採取主動，用活力突破現狀。',
+      'Cups': '聖杯對應「水元素」，象徵情感與潛意識。請運用柔軟的態度、傾聽直覺，關注內心感受。',
+      'Swords': '寶劍對應「風元素」，象徵理智與思考。面對問題請保持頭腦清晰，用客觀分析斬斷迷惘。',
+      'Pentacles': '錢幣對應「土元素」，象徵物質與現實。請將焦點放回現實層面，一步一腳印地務實行動。'
+    };
+
+    const numerologyData = {
+      '1': '數字 1 象徵核心能量的爆發與純粹的新開始。',
+      '2': '數字 2 代表選擇、平衡，以及關係的建立與磨合。',
+      '3': '數字 3 象徵初步成果與向外擴張，能量正在發展。',
+      '4': '數字 4 代表穩定、安全感，但也需留意是否過於固執。',
+      '5': '數字 5 象徵挑戰與改變，是一個必經的動盪過渡期。',
+      '6': '數字 6 代表恢復平衡、療癒以及人際之間的互助。',
+      '7': '數字 7 象徵評估、反思，以及尋求更深層的智慧。',
+      '8': '數字 8 代表力量的展現，以及對目標的極度專注。',
+      '9': '數字 9 意味著接近完成與自我滿足，伴隨內在的豐盛。',
+      '10': '數字 10 象徵循環的結束，同時為下一個新循環做準備。',
+      'Page': '侍者代表新消息、好奇心與單純的初階能量。',
+      'Knight': '騎士象徵迅速的行動與極端的能量展現。',
+      'Queen': '王后代表內在的成熟、滋養、接納與理解。',
+      'King': '國王象徵外在的掌控、權威、成就與領導力。'
+    };
+
+    // === 塔羅牌資料庫生成 ===
+    const generateDeck = () => {
+      const deck = [
+        { id: 0, numeral: '0', name: '愚者', en: 'The Fool', keywords: '新的開始、純真、冒險、無限潛力', description: '放下過去的包袱，帶著輕鬆的心情踏上新的旅程。這是一段不計後果、相信宇宙安排的純粹冒險，請保持開放與好奇。', symbol: '🌟', advice: '保持開放的心態，不要害怕未知的改變，勇敢邁出第一步。', element: 'Major', rank: '0' },
+        { id: 1, numeral: 'I', name: '魔術師', en: 'The Magician', keywords: '創造力、意志力、顯化、資源', description: '你已經具備了實現夢想的所有工具與資源。現在是採取行動、將想法化為現實的絕佳時刻，宇宙的能量正為你所用。', symbol: '🌟', advice: '善用您現有的資源與才華，主動出擊去創造屬於你的機會。', element: 'Major', rank: '1' },
+        { id: 2, numeral: 'II', name: '女祭司', en: 'The High Priestess', keywords: '直覺、潛意識、內在智慧、靜止', description: '向內尋求答案。現在不適合急躁行動，而是應該靜下來，傾聽你內在的聲音與直覺，有些隱藏的真相正在浮現。', symbol: '🌟', advice: '相信您的直覺與潛意識，答案其實已經在您的心中。', element: 'Major', rank: '2' },
+        { id: 3, numeral: 'III', name: '皇后', en: 'The Empress', keywords: '豐盛、孕育、愛與美、自然', description: '去感受生活中的美好與豐盛。這是一段適合滋養自己、照顧他人，並讓事物自然生長的時期，充滿了愛與包容。', symbol: '🌟', advice: '對自己好一點，用愛與溫柔去包容現狀，享受生命的美好。', element: 'Major', rank: '3' },
+        { id: 4, numeral: 'IV', name: '皇帝', en: 'The Emperor', keywords: '秩序、結構、領導力、權威', description: '建立穩固的基礎與秩序。你需要運用理智與紀律來掌控局面，為你的目標制定清晰且務實的計畫。', symbol: '🌟', advice: '建立規則與界線，用理智與務實的態度去處理眼前的問題。', element: 'Major', rank: '4' },
+        { id: 5, numeral: 'V', name: '教皇', en: 'The Hierophant', keywords: '傳統、學習、精神指引、信仰', description: '遵循傳統或尋求專業人士的建議。這是一個適合學習、進修，或是尋求心靈導師與體制內指引的階段。', symbol: '🌟', advice: '尋求長輩或專業人士的建議，暫時走穩定的常規路線會比較順利。', element: 'Major', rank: '5' },
+        { id: 6, numeral: 'VI', name: '戀人', en: 'The Lovers', keywords: '愛、和諧、選擇、價值觀', description: '建立深刻的連結，無論是感情還是合作夥伴。同時，這也暗示你面臨著一個需要真心對待、價值觀契合的重要選擇。', symbol: '🌟', advice: '順從您的真心做出選擇，尋求人際關係與自我內心的和諧。', element: 'Major', rank: '6' },
+        { id: 7, numeral: 'VII', name: '戰車', en: 'The Chariot', keywords: '意志、克服困難、前進、勝利', description: '集中你的意志力，駕馭內在的衝突。只要保持高度的專注與決心，你就能克服眼前的障礙，迅速向前推進。', symbol: '🌟', advice: '堅持到底，掌控好自己的情緒與方向，不要被眼前的阻礙打敗。', element: 'Major', rank: '7' },
+        { id: 8, numeral: 'VIII', name: '力量', en: 'Strength', keywords: '勇氣、耐心、柔性力量、同理心', description: '真正的力量來自於內心的溫柔與耐心，而非外在的強迫。用愛與包容去面對恐懼與挑戰，你能輕易安撫狂躁。', symbol: '🌟', advice: '以柔克剛，用耐心與包容去化解衝突，你比想像中更堅強。', element: 'Major', rank: '8' },
+        { id: 9, numeral: 'IX', name: '隱者', en: 'The Hermit', keywords: '獨處、反省、內在指引、尋求真理', description: '暫時遠離外界的喧囂，給自己一些獨處的時間。在寧靜中回顧過去，點亮內在的明燈，尋找下一步的方向。', symbol: '🌟', advice: '給自己一些獨處沉澱的時間，重新釐清自己真正渴望的方向。', element: 'Major', rank: '9' },
+        { id: 10, numeral: 'X', name: '命運之輪', en: 'Wheel of Fortune', keywords: '轉機、循環、順勢而為、業力', description: '生命是不斷循環的，一個無法避免的改變即將到來。接受命運的安排，順應生命的流動，好運正在轉向你。', symbol: '🌟', advice: '順應局勢的變化，不要抗拒，請把握即將到來的轉機。', element: 'Major', rank: '10' },
+        { id: 11, numeral: 'XI', name: '正義', en: 'Justice', keywords: '平衡、客觀、真相、因果', description: '為自己的行為負責，尋求公平與平衡。用理智與客觀的態度來評估現狀，種下什麼因，就會結什麼果。', symbol: '🌟', advice: '保持客觀理智，做出不偏不倚的決斷，誠實面對自己。', element: 'Major', rank: '11' },
+        { id: 12, numeral: 'XII', name: '倒吊人', en: 'The Hanged Man', keywords: '暫停、換位思考、犧牲、新視角', description: '接受目前的停滯，這是一個轉換視角的絕佳機會。學會放下控制欲，用不同的角度看待事物，你會獲得頓悟。', symbol: '🌟', advice: '換個角度看事情，有時候退一步或暫時妥協，海闊天空。', element: 'Major', rank: '12' },
+        { id: 13, numeral: 'XIII', name: '死神', en: 'Death', keywords: '結束、轉變、放手、重生', description: '一個階段的必然結束，意味著新階段的開始。勇敢地放下不再適合你的事物，為新的生機騰出空間。', symbol: '🌟', advice: '勇敢斷捨離，舊有的結束才能帶來嶄新的開始。', element: 'Major', rank: '13' },
+        { id: 14, numeral: 'XIV', name: '節制', en: 'Temperance', keywords: '平衡、調和、療癒、耐心', description: '在不同的極端之間尋找最佳的平衡點。這是一個療癒與資源融合的過程，保持耐心，讓事物自然發酵。', symbol: '🌟', advice: '避免走極端，在中庸之道與妥協裡找到內心的平靜與進展。', element: 'Major', rank: '14' },
+        { id: 15, numeral: 'XV', name: '惡魔', en: 'The Devil', keywords: '束縛、誘惑、陰暗面、物質沉迷', description: '正視自己內心的恐懼與過度的執著。你可能被某些壞習慣或物質欲望所束縛，意識到這些限制，是重獲自由的第一步。', symbol: '🌟', advice: '看清眼前的誘惑與不健康的執念，勇敢切斷有害的連結。', element: 'Major', rank: '15' },
+        { id: 16, numeral: 'XVI', name: '高塔', en: 'The Tower', keywords: '突變、破壞、解放、真相大白', description: '突如其來的劇變會打破現有的安穩，摧毀虛假的基礎。雖然過程震撼，但在廢墟中你將看見真實並獲得徹底解放。', symbol: '🌟', advice: '接受突如其來的改變，這是摧毀錯覺、重建穩固基礎的契機。', element: 'Major', rank: '16' },
+        { id: 17, numeral: 'XVII', name: '星星', en: 'The Star', keywords: '希望、療癒、靈感、寧靜', description: '風暴過後帶來了希望與平靜的星光。敞開心胸接受宇宙的療癒，你的未來充滿了光明、靈感與和平。', symbol: '🌟', advice: '保持希望與樂觀，宇宙正在為您引路，請相信美好的未來。', element: 'Major', rank: '17' },
+        { id: 18, numeral: 'XVIII', name: '月亮', en: 'The Moon', keywords: '不安、潛意識、直覺、幻覺', description: '事物可能不如表面所見，潛意識的恐懼與不安正在浮現。相信你的直覺，小心且耐心地穿越這段迷惘的時期。', symbol: '🌟', advice: '面對內心的恐懼與不安，不要急著做決定，等候真相自然浮現。', element: 'Major', rank: '18' },
+        { id: 19, numeral: 'XIX', name: '太陽', en: 'The Sun', keywords: '成功、喜悅、活力、清晰', description: '光明驅散了黑暗，帶來了純粹的活力與成功。這是一個充滿喜悅、清晰與自信的時刻，盡情展現你的光芒吧。', symbol: '🌟', advice: '保持熱情與自信，好運與喜悅將伴隨您，大膽前進。', element: 'Major', rank: '19' },
+        { id: 20, numeral: 'XX', name: '審判', en: 'Judgement', keywords: '覺醒、召喚、寬恕、重生', description: '內在的覺醒與靈魂的召喚。這是一個反思過去、原諒自己與他人，並準備迎接全新生活層次的重要時刻。', symbol: '🌟', advice: '原諒過去的自己與他人，聆聽內心的呼喚，迎接心靈的覺醒。', element: 'Major', rank: '20' },
+        { id: 21, numeral: 'XXI', name: '世界', en: 'The World', keywords: '圓滿、完成、整合、完美', description: '一個長期的旅程或目標即將圓滿達成。你已經整合了所有的經驗，準備好迎接下一個更高層次的生命循環。', symbol: '🌟', advice: '享受您努力得來的成果，一切即將圓滿，為下一個旅程做好準備。', element: 'Major', rank: '21' }
+      ];
+
+      const suitsData = {
+        'Wands': { name: '權杖', symbol: '🪵' },
+        'Cups': { name: '聖杯', symbol: '🏆' },
+        'Swords': { name: '寶劍', symbol: '⚔️' },
+        'Pentacles': { name: '錢幣', symbol: '🪙' }
+      };
+
+      const ranksList = [
+        { r: '1', n: '一', e: 'Ace' }, { r: '2', n: '二', e: 'Two' }, { r: '3', n: '三', e: 'Three' },
+        { r: '4', n: '四', e: 'Four' }, { r: '5', n: '五', e: 'Five' }, { r: '6', n: '六', e: 'Six' },
+        { r: '7', n: '七', e: 'Seven' }, { r: '8', n: '八', e: 'Eight' }, { r: '9', n: '九', e: 'Nine' },
+        { r: '10', n: '十', e: 'Ten' }, { r: 'Page', n: '侍者', e: 'Page' }, { r: 'Knight', n: '騎士', e: 'Knight' },
+        { r: 'Queen', n: '王后', e: 'Queen' }, { r: 'King', n: '國王', e: 'King' }
+      ];
+
+      const minorContent = {
+        'Wands': [
+          { k: '靈感、新行動、潛力', d: '這是一個充滿創意與熱情的全新開始。你內在的火花已經點燃，具備了無限的發展潛力。', a: '把握當下的靈感與直覺，大膽地踏出行動的第一步。' },
+          { k: '規劃、決定、遠見', d: '站在已有的基礎上眺望遠方。你正面臨選擇：是留在舒適圈，還是勇敢踏出未知的世界去擴張版圖？', a: '不要滿足於現狀，勇敢地為未來的擴張做出明確的決定與規劃。' },
+          { k: '探索、擴展、看見回報', d: '你的努力開始看見初步的回報。現在是展望未來、向外探索，並準備迎接船隻回港的時刻。', a: '保持宏觀的視野，你的計畫正在順利推進，繼續擴展你的版圖。' },
+          { k: '慶祝、和諧、穩定、歸屬', d: '這是一個階段性的成功與歡樂時刻，象徵著和諧的環境、穩定的基礎，以及與身邊人的慶祝。', a: '停下腳步享受目前的成就，與你愛的人共同分享這份喜悅與安定。' },
+          { k: '競爭、衝突、挑戰、分歧', d: '你可能正面臨一些小型的爭執、意見分歧或良性競爭。每個人都想表達自己，導致場面混亂。', a: '保持冷靜，將這種混亂轉化為建設性的討論，而非互相攻擊。' },
+          { k: '勝利、榮耀、認可、自信', d: '你克服了挑戰，取得了顯著的成功，並獲得了他人的讚賞與認可。這是一個充滿自信與榮耀的時刻。', a: '享受你的勝利與他人的肯定，但請保持謙遜，繼續帶領大家前進。' },
+          { k: '防禦、堅持、挑戰、信念', d: '你處於一個有利的位置，但也面臨著挑戰或競爭者的攻擊。你有能力堅守陣地，捍衛自己的立場。', a: '堅持你的信念與立場，不要輕易退縮，你有足夠的力量抵禦外敵。' },
+          { k: '迅速、行動、變化、消息', d: '事情正在極速發展，障礙已經消除。這象徵著迅速的行動、旅行，或是有重要消息即將飛快傳來。', a: '準備好迎接快速的變動，把握時機，果斷行動，不要拖延。' },
+          { k: '疲憊、堅持、防禦、韌性', d: '你經歷了許多戰鬥，感到疲憊且充滿戒心。但你已經具備了足夠的經驗與韌性，這是最後的考驗。', a: '咬緊牙關撐過這最後一關，你的經驗會保護你，勝利就在眼前。' },
+          { k: '負擔、壓力、責任、過勞', d: '你承擔了過多的責任與壓力，雖然已經接近目標，遇到過程讓你感到喘不過氣。', a: '學會放下不必要的負擔，適時尋求幫助或重新分配工作，不要硬撐。' },
+          { k: '消息、熱情、探索、新點子', d: '一個充滿好奇心與熱情的新開始。你可能獲得了新的靈感，或是收到令人興奮的消息。', a: '擁抱你內心的小孩，對新事物保持熱忱與探索的勇氣。' },
+          { k: '衝動、行動、冒險、熱血', d: '充滿活力的行動派，準備全速前進。這代表著一股強烈的衝勁，但也可能缺乏周全的計畫。', a: '帶著熱情行動是好事，但在衝刺前，請確認你的方向是否正確。' },
+          { k: '自信、熱情、魅力、獨立', d: '充滿自信、獨立且具有魅力的狀態。你散發著溫暖的影響力，能夠堅定且熱情地掌控生活。', a: '展現你的自信與魅力，相信自己的能力，熱情地對待身邊的人事物。' },
+          { k: '領導、遠見、魄力、領袖', d: '一位具有遠見的領導者。你有足夠的魄力與行動力去掌控全局，並將願景化為現實。', a: '承擔起領導的責任，運用你的遠見與決斷力去引導事情的發展。' }
+        ],
+        'Cups': [
+          { k: '愛、直覺、新感情、滿溢', d: '情感的湧流與心靈的滋養。這預示著一段新關係的開始，或是內在直覺與愛被深度喚醒。', a: '敞開心胸去接受與給予愛，相信你的直覺，讓情感自然流露。' },
+          { k: '結合、吸引、和諧、互惠', d: '建立平等的伴侶關係或深層的連結。這是一段充滿和諧、互相吸引與理解的美好關係。', a: '珍惜與他人建立的深刻連結，尋求互相理解與平等的互動。' },
+          { k: '慶祝、友誼、團聚、社交', d: '與志同道合的朋友分享喜悅的時刻。這代表著慶祝、愉快的社交活動與情感的支持網絡。', a: '多參與社交活動，與朋友分享你的快樂，享受人際關係的滋養。' },
+          { k: '倦怠、冷漠、沉思、錯失', d: '對現狀感到不滿、無聊或冷漠，陷入自我沉思中，可能會因此忽略了宇宙遞給你的新機會。', a: '不要過度沉溺於自己的情緒中，抬起頭看看周圍，有新的機會正在等你。' },
+          { k: '悲傷、失落、遺憾、哀悼', d: '專注於失去的事物與過去的遺憾，感到悲傷。但請注意，你身後仍有未傾倒的杯子，希望依然存在。', a: '允許自己悲傷，但請記得轉過身，看看那些仍然留下並支持你的美好。' },
+          { k: '回憶、童年、純真、懷舊', d: '懷舊的情緒，或是來自過去的人事物重新出現。這也代表著單純的快樂、無條件的給予與童真。', a: '找回純真的初心，或是從過去的美好回憶中汲取前進的力量。' },
+          { k: '選擇、幻想、迷惘、白日夢', d: '面臨眾多選擇，看似充滿誘惑，但其中有些可能只是不切實際的幻想。你需要理清思緒。', a: '不要被眼前的幻象迷惑，腳踏實地評估每一個選擇的真實性。' },
+          { k: '追尋、離開、放下、探索', d: '覺得現狀已經無法滿足靈魂的渴望，決定轉身離開熟悉的環境，去尋求更高的意義與平靜。', a: '勇敢放下那些無法再滋養你的人事物，去追尋你心靈真正渴望的平靜。' },
+          { k: '滿足、願望、豐盛、享受', d: '這被稱為「願望牌」，代表著情感與物質上的高度自我滿足。你的願望即將成真，可以盡情享受。', a: '大方地享受你應得的快樂與豐盛，對目前擁有的一切保持感恩。' },
+          { k: '和諧、家庭、幸福、圓滿', d: '情感的圓滿巔峰。這象徵著與家人、愛人共享的和諧與幸福，是一個充滿愛與平靜的避風港。', a: '珍惜與家人或伴侶相處的時光，這是你人生中最寶貴的財富。' },
+          { k: '想像力、直覺、新消息、浪漫', d: '帶來情感上的新消息、浪漫的提議或藝術靈感。這是一個充滿想像力與直覺的溫柔信使。', a: '敞開心扉去感受微小的情感悸動，相信你的直覺與想像力。' },
+          { k: '浪漫、魅力、理想、追求', d: '一位追求浪漫與理想化情感的行動者。他帶著善意與愛意前來，聽從內心的指引。', a: '跟隨你心裡的熱情與愛去行動，將你的浪漫與理想化為實際的追求。' },
+          { k: '溫柔、直覺、同理心、傾聽', d: '充滿愛、包容與強烈直覺的狀態。她能夠深刻理解他人的情緒，並提供溫柔的心靈慰藉。', a: '運用你的同理心去關懷他人，同時也要好好傾聽自己內在的情感需求。' },
+          { k: '成熟、寬容、情緒穩定、外交', d: '能很好地控制並表達情感的成熟人物。他在情感上非常穩定，能客觀且寬容地處理複雜的人際關係。', a: '保持情緒的穩定與成熟，用寬容和理解的態度去協調周遭的關係。' }
+        ],
+        'Swords': [
+          { k: '理智、清晰、突破、真理', d: '劃破迷霧的清晰思考與真相的顯露。這是一個帶來突破性觀點、理智與決斷力的新開端。', a: '運用清晰的邏輯與理智去面對問題，勇於追求並說出真相。' },
+          { k: '僵局、選擇、逃避、蒙蔽', d: '面臨兩難的抉擇，內心充滿衝突，因此暫時蒙蔽自己不去面對，導致事情陷入僵局。', a: '摘下蒙眼的布，誠實地面對眼前的選項，拖延無法解決問題。' },
+          { k: '悲傷、心痛、分離、刺痛', d: '情感上的痛苦、悲傷或分離。這是一種理智帶來的刺痛，雖然痛苦，但也能幫助你看清現實。', a: '允許自己感受悲傷，這是療癒的必經過程，真相雖然刺痛但能讓人清醒。' },
+          { k: '休息、恢復、靜態、沉澱', d: '經歷了一段壓力過後的休息與沉澱。你需要從混亂中退下，修復身心，準備未來重新出發。', a: '給自己按下暫停鍵，好好休息與冥想，現在不是採取行動的時候。' },
+          { k: '衝突、失敗、自私、代價', d: '經歷了一場代價高昂的爭吵或勝利。為了贏得局面，可能傷害了關係，這是一種損人不利己的狀態。', a: '評估這場爭吵是否值得。有時候，放下無謂的勝負欲才是真正的贏家。' },
+          { k: '療癒、過渡、遠離、平靜', d: '逐漸遠離痛苦或混亂的過去，正航向更平靜的水域。這是一個過渡與療癒的漸進過程。', a: '讓時間帶走傷痛，慢慢過渡到下一個階段，情況正在逐漸好轉。' },
+          { k: '隱瞞、策略、逃避、非傳統', d: '使用策略、隱瞞真相或走捷徑來獲取優勢。這暗示著事情不能僅靠正面衝突，需要智慧與手腕。', a: '審視你的策略是否正直；若是面對他人，請小心防範可能的欺瞞。' },
+          { k: '束縛、限制、無力感、盲點', d: '覺得自己被困住了，充滿無力感。但這些限制多半是你自我設限的想法，其實你隨時有能力解脫。', a: '打破思想的牢籠，看清恐懼的幻影，你擁有改變現狀的力量。' },
+          { k: '焦慮、噩夢、擔憂、精神壓力', d: '過度的精神壓力和焦慮，甚至引發失眠與噩夢。大部分的恐懼都在你的腦海中，現實未必如此糟糕。', a: '停止過度的腦內小劇場，找人傾訴你的擔憂，不要獨自承擔壓力。' },
+          { k: '結束、谷底、痛苦、重生', d: '最壞的情況已經發生，痛苦達到了極點。但這也意味著這一切終於結束，太陽即將重新升起。', a: '接受已經發生的結局，既然已經到了谷底，接下來就只會往上走了。' },
+          { k: '警覺、好奇、機智、消息', d: '機智且充滿好奇心，時刻保持警覺。可能會帶來具挑戰性的消息，或是對事物進行銳利的分析。', a: '保持敏銳的觀察力與求知慾，收集資訊，但要注意言語上的犀利。' },
+          { k: '迅速、批判、果斷、直衝', d: '行動極為迅速、言辭犀利，不帶感情地直衝目標。具備強大的邏輯力，但也容易顯得魯莽。', a: '果斷行動的同時，請留意是否過於急躁或忽略了他人的感受。' },
+          { k: '獨立、理智、洞察、清晰', d: '思路清晰、實事求是，能看透事物的本質。她擁有獨立的思考能力，不會被情感輕易左右。', a: '用理智與客觀的態度去分析問題，勇敢說出你的真實想法。' },
+          { k: '權威、邏輯、公正、專業', d: '理性且具備權威的判斷力。他依賴邏輯與事實來做決定，是一位追求公正與真理的專業人士。', a: '排除感情用事，用專業、邏輯與公正的標準去處理當前的狀況。' }
+        ],
+        'Pentacles': [
+          { k: '財富、機會、務實、新基礎', d: '物質與現實層面的新機會。這預示著財務、投資、事業或健康方面有一個非常良好的務實開端。', a: '抓住眼前的實際機會，為你的目標打下穩固的物質或健康基礎。' },
+          { k: '平衡、適應、波動、靈活', d: '在多項任務、財務或資源中靈活地維持平衡。生活充滿了波動，你需要具備適應力。', a: '保持靈活的身段，在不同的選項與壓力之間尋求動態的平衡。' },
+          { k: '合作、專業、學習、建立', d: '透過團隊合作與展現專業技能來完成目標。這是一個需要互相配合、奠定扎實基礎的建設階段。', a: '結合他人的專業與力量，發揮你的技能，共同打造卓越的成果。' },
+          { k: '保守、固執、控制、安全感', d: '緊抓著擁有的物質或金錢不放，對改變感到恐懼。雖然獲得了安全感，但也限制了未來的發展。', a: '適度地理財是好事，但不要因為過度保守而阻礙了金錢與能量的流動。' },
+          { k: '貧窮、孤立、困境、互相扶持', d: '面臨物質或精神上的匱乏，覺得被世界遺棄，陷入寒冬。但其實只要抬頭，援助就在不遠處。', a: '在困境中不要孤立自己，勇敢尋求幫助，並與身邊的人互相扶持度過難關。' },
+          { k: '慷慨、分享、慈善、收支平衡', d: '給予與接受的平衡。你可能處於有能力幫助他人的位置，或是即將獲得所需的資金與援助。', a: '大方地分享你的資源，或是坦然接受他人的善意幫助，維持能量的平衡。' },
+          { k: '評估、耐心、等待、投資回報', d: '回顧過去的努力與投資，正在評估目前的成果。現在需要的是耐心等待作物成熟，不要急躁。', a: '給事情一點時間發酵，你已經付出了努力，現在是耐心等待收成的時刻。' },
+          { k: '專注、技能、勤奮、工匠精神', d: '專注於細節與技能的提升，腳踏實地地重複著工作。這是一種匠人精神，透過努力獲得成就。', a: '專注於手邊的工作與學習，持續精進你的技能，汗水不會背叛你。' },
+          { k: '獨立、豐盛、享受、自我價值', d: '靠著自己的努力獲得了豐碩的成果與高品質的生活。這是一個經濟獨立、充滿自信與優雅的狀態。', a: '享受你辛勤工作換來的豐盛，肯定自己的價值，過你理想中的生活。' },
+          { k: '傳承、繁榮、家族、長期穩定', d: '長期的穩定、富足與安全感。這象徵著家族的繁榮、傳統的延續，或是事業上建立的長久基業。', a: '從長遠的角度來規劃，重視傳統、家庭價值，建立能長久流傳的基礎。' },
+          { k: '學習、務實、新計畫、好學', d: '踏實地學習新技能或開啟新的投資與計畫。他對世界充滿好奇，但處理方式非常務實且謹慎。', a: '保持務實好學的態度，將你的夢想化為具體的實行計畫，從基礎做起。' },
+          { k: '穩重、可靠、堅持、按部就班', d: '步調緩慢但極為可靠與堅定不移。他不喜歡冒險，而是堅持到底，確保每一個步驟都完美落實。', a: '不要急功近利，保持穩健的步伐，堅持不懈地完成你的目標。' },
+          { k: '豐盈、務實、滋養、世俗成就', d: '善於照顧他人且享受物質生活的美好。她務實且溫暖，能將環境打理得舒適且充滿豐盛感。', a: '在追求務實目標的同時，也別忘了滋養自己的身體，享受生活中的小確幸。' },
+          { k: '成功、財富、穩定、商業頭腦', d: '在事業與物質上取得巨大成功的穩重領袖。他擁有極佳的商業頭腦，並能提供實質的安全感。', a: '運用你的務實經驗與商業直覺，穩固你的地位，保護你所建立的成果。' }
+        ]
+      };
+
+      Object.keys(minorContent).forEach(suitKey => {
+        minorContent[suitKey].forEach((content, index) => {
+          const rankInfo = ranksList[index];
+          deck.push({
+            id: deck.length,
+            numeral: rankInfo.r,
+            name: `${suitsData[suitKey].name}${rankInfo.n}`,
+            en: `${rankInfo.e} of ${suitKey}`,
+            keywords: content.k,
+            description: content.d,
+            symbol: suitsData[suitKey].symbol,
+            advice: content.a,
+            element: suitKey,
+            rank: rankInfo.r
+          });
+        });
+      });
+
+      return deck;
+    };
+
+    const FULL_DECK = generateDeck();
+
+    const CardBack = ({ className = "" }) => (
+      <div className={`relative w-full h-full bg-[#FDF6E3] p-1.5 shadow-sm flex flex-col items-center ${className}`}>
+        <div className="w-full h-full border-2 border-double border-[#8B7355] flex flex-col items-center justify-center relative bg-opacity-50 overflow-hidden"
+             style={{ backgroundImage: 'radial-gradient(circle at center, transparent 0%, rgba(210, 180, 140, 0.08) 100%)' }}>
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-[#8B7355] z-10">
+            <span className="text-3xl md:text-4xl drop-shadow-md leading-none font-light">✦</span>
+          </div>
+        </div>
+      </div>
+    );
+
+    const CardFront = ({ card }) => (
+      <div className="relative w-full h-full bg-[#FDF6E3] p-2 shadow-xl flex flex-col items-center">
+        <div className="w-full h-full border-2 border-double border-[#8B7355] flex flex-col items-center justify-center p-3 bg-opacity-50 overflow-hidden relative"
+             style={{ backgroundImage: 'radial-gradient(circle at center, transparent 0%, rgba(210, 180, 140, 0.08) 100%)' }}>
+          
+          <div className="absolute top-4 md:top-6 text-[#5C4033] text-lg md:text-xl font-bold tracking-widest border-b border-[#8B7355]/50 pb-1 px-3">
+            {card.numeral}
+          </div>
+          
+          <div className="flex flex-col items-center justify-center my-auto">
+            <div className="text-[#4A3B32] text-xl md:text-3xl font-bold tracking-widest whitespace-nowrap mb-2">
+              {card.name}
+            </div>
+            <div className="text-[#8B7355] text-xs md:text-sm tracking-widest uppercase font-sans">
+              {card.en}
+            </div>
+          </div>
+          
+          <div className="absolute bottom-4 md:bottom-6 text-[#8B7355]/50 text-[0.65rem] md:text-xs tracking-widest uppercase">
+            FF tarot
+          </div>
+        </div>
+      </div>
+    );
+
+    function App() {
+      const [step, setStep] = useState('home');
+      const [isFading, setIsFading] = useState(false);
+      
+      const [breathPhase, setBreathPhase] = useState('inhale');
+      const [breathText, setBreathText] = useState('請跟隨光暈深呼吸...');
+
+      const [fanCards, setFanCards] = useState([]); 
+      const [pickedCard, setPickedCard] = useState(null);
+
+      const transitionTo = (nextStep, delay = 1000) => {
+        setIsFading(true);
+        setTimeout(() => {
+          setStep(nextStep);
+          setIsFading(false);
+        }, delay);
+      };
+
+      const handleStart = () => {
+        setPickedCard(null);
+        transitionTo('meditation', 800);
+      };
+
+      const handleSkipMeditation = () => {
+        setIsFading(true);
+        setTimeout(() => {
+          const shuffled = [...FULL_DECK].sort(() => Math.random() - 0.5);
+          const fanned = shuffled.slice(0, 21).map((card, i) => ({
+            card,
+            isSelected: false,
+            uniqueId: `fan-${i}`
+          }));
+          setFanCards(fanned);
+          setStep('fanning');
+          setIsFading(false);
+        }, 300);
+      };
+
+      useEffect(() => {
+        if (step === 'meditation') {
+          let isSubscribed = true;
+          const sequence = async () => {
+            setBreathPhase('inhale');
+            setBreathText('緩慢地深呼吸...');
+            await new Promise(r => setTimeout(r, 4000));
+            if (!isSubscribed) return;
+            
+            setBreathPhase('exhale');
+            setBreathText('緩慢地吐氣...');
+            await new Promise(r => setTimeout(r, 4000));
+            if (!isSubscribed) return;
+
+            setBreathPhase('inhale');
+            setBreathText('放下雜念...');
+            await new Promise(r => setTimeout(r, 3500));
+            if (!isSubscribed) return;
+
+            setBreathText('內心回歸平靜。');
+            await new Promise(r => setTimeout(r, 1500));
+            if (isSubscribed) {
+              const shuffled = [...FULL_DECK].sort(() => Math.random() - 0.5);
+              const fanned = shuffled.slice(0, 21).map((card, i) => ({
+                card,
+                isSelected: false,
+                uniqueId: `fan-${i}`
+              }));
+              
+              setFanCards(fanned);
+              transitionTo('fanning', 1000);
+            }
+          };
+          sequence();
+          return () => { isSubscribed = false; };
+        }
+      }, [step]);
+
+      const handleSelectCard = (fanCardItem) => {
+        if (fanCardItem.isSelected || pickedCard) return;
+
+        const updatedFan = fanCards.map(f => 
+          f.uniqueId === fanCardItem.uniqueId ? { ...f, isSelected: true } : f
+        );
+        setFanCards(updatedFan);
+        setPickedCard(fanCardItem.card);
+
+        setTimeout(() => {
+          transitionTo('result', 1500);
+        }, 1200);
+      };
+
+      const handleReset = () => {
+        setIsFading(true);
+        setTimeout(() => {
+          setPickedCard(null);
+          setFanCards([]);
+          setStep('home');
+          setIsFading(false);
+        }, 800);
+      };
+
+      const generateDynamicReading = (card) => {
+        const elementMeaning = elementData[card.element] || '';
+        const numMeaning = card.element !== 'Major' ? (numerologyData[card.rank] || '') : '';
+
+        return (
+          <div className="text-[#5C4033] leading-loose tracking-wide text-justify text-sm space-y-6 mt-2 pt-2">
+            <div>
+              <h5 className="text-[#B8860B] font-bold border-b border-[#D2B48C]/30 pb-2 mb-3 flex items-center gap-2">
+                <span className="text-sm">✦</span> 核心牌義
+              </h5>
+              <p>
+                <strong className="text-[#8B7355] mr-1">關鍵字：{card.keywords}</strong><br/>
+                {card.description}
+              </p>
+            </div>
+
+            <div>
+              <h5 className="text-[#B8860B] font-bold border-b border-[#D2B48C]/30 pb-2 mb-3 flex items-center gap-2">
+                <span className="text-sm">✦</span> 能量頻率
+              </h5>
+              <p>
+                {elementMeaning} {numMeaning}
+              </p>
+            </div>
+
+            <div className="mt-8 p-5 md:p-6 bg-white border border-[#D2B48C]/50 rounded-xl text-center shadow-sm">
+              <h5 className="text-[#B8860B] font-bold tracking-widest text-sm mb-4">✧ 今日療癒與幸運 ✧</h5>
+              <p className="text-[#6B5B4D] text-[1rem] mb-5 italic font-medium">
+                「{healingQuotes[card.id % healingQuotes.length]}」
+              </p>
+              <div className="flex justify-center items-center gap-3 md:gap-5 text-xs md:text-sm text-[#8B7355] bg-[#FAF7F2] py-2 px-4 md:px-6 rounded-full inline-flex mx-auto border border-[#D2B48C]/20 whitespace-nowrap flex-nowrap">
+                <span className="whitespace-nowrap shrink-0">幸運數字：<strong className="text-[#5C4033] text-base md:text-lg">{(card.id % 9) + 1}</strong></span>
+                <span className="w-px bg-[#D2B48C]/50 h-5 my-auto shrink-0"></span>
+                <span className="whitespace-nowrap shrink-0">幸運色：<strong className="text-[#5C4033] text-base md:text-lg">{luckyColors[card.id % luckyColors.length]}</strong></span>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const generateOverallAdvice = () => {
+        if (!pickedCard) return null;
+        return (
+          <div className="space-y-3">
+            <p className="text-[#B8860B] text-lg md:text-xl font-bold leading-relaxed">
+              「{pickedCard.advice}」
+            </p>
+            <p className="text-[#5C4033] text-sm md:text-base">
+              請將這份指引轉化為實際行動，帶著平靜與自信展開今天。
+            </p>
+          </div>
+        );
+      };
+
+      return (
+        <div className="w-full h-full relative">
+          
+          {step !== 'home' && (
+            <div className="fixed top-0 left-0 w-full bg-[#FAF7F2]/90 backdrop-blur-md z-[100] px-4 py-3 md:px-8 flex justify-between items-center shadow-sm">
+              <div 
+                className="text-[#B8860B] font-bold tracking-widest text-lg cursor-pointer hover:opacity-80 transition-opacity" 
+                onClick={handleReset}
+              >
+                FF tarot
+              </div>
+              <button 
+                onClick={handleReset}
+                className="px-4 py-2 text-[#8B7355] rounded-full hover:bg-[#FDF6E3] hover:text-[#5C4033] transition-all duration-300 tracking-widest text-sm font-medium flex items-center gap-2 group"
+              >
+                <span className="group-hover:-rotate-180 transition-transform duration-500">↻</span> 重新開始
+              </button>
+            </div>
+          )}
+
+          <div className={`w-full min-h-screen flex flex-col items-center justify-center p-4 pt-16 md:pt-20 transition-opacity duration-1000 ease-in-out ${isFading ? 'opacity-0' : 'opacity-100'}`}>
+            
+            {step === 'home' && (
+              <div className="flex flex-col items-center justify-center text-center space-y-12 w-full max-w-lg mt-4">
+                <div className="space-y-4 mb-8">
+                  <h1 className="text-5xl md:text-6xl tracking-widest text-[#B8860B] font-light drop-shadow-sm">
+                    FF tarot
+                  </h1>
+                  <h2 className="text-lg md:text-xl tracking-[0.3em] text-[#8B7355] font-light">
+                    每日療癒指引
+                  </h2>
+                </div>
+                
+                <p className="text-[#6B5B4D] text-sm tracking-widest leading-loose">
+                  在明亮與溫暖中尋找平靜，<br/>宇宙正在等待為您揭曉今日的專屬頻率。
+                </p>
+                
+                <button 
+                  onClick={handleStart}
+                  className="w-full md:w-3/4 mt-4 px-8 py-5 bg-[#FDF6E3] border border-[#D2B48C] text-[#8B7355] rounded-xl hover:bg-[#F5DEB3] hover:-translate-y-1 transition-all duration-300 shadow-sm flex flex-col items-center gap-2 group mx-auto"
+                >
+                  <span className="text-xl md:text-2xl font-bold tracking-widest flex items-center justify-center gap-3">
+                    <span className="text-[#C19A6B] text-lg md:text-xl transition-transform group-hover:rotate-180 duration-500">✦</span>
+                    開始接收今日指引
+                    <span className="text-[#C19A6B] text-lg md:text-xl transition-transform group-hover:rotate-180 duration-500">✦</span>
+                  </span>
+                </button>
+              </div>
+            )}
+
+            {step === 'meditation' && (
+              <>
+                <div className="flex flex-col items-center justify-center w-full text-center flex-grow">
+                  <div className="relative w-48 h-48 flex items-center justify-center mb-12">
+                  <div 
+                    className={`absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(210,180,140,0.3)_0%,transparent_70%)] transition-transform duration-[4000ms] ease-in-out ${breathPhase === 'inhale' ? 'scale-150 opacity-80' : 'scale-75 opacity-30'}`}
+                  ></div>
+                  <div 
+                    className={`absolute inset-4 rounded-full border border-[#D2B48C]/40 transition-transform duration-[4000ms] ease-in-out ${breathPhase === 'inhale' ? 'scale-125' : 'scale-90'}`}
+                  ></div>
+                  <span className="text-[#C19A6B] text-4xl opacity-80 drop-shadow-md relative z-10">✦</span>
+                </div>
+                <p className="text-[#8B7355] text-xl tracking-widest transition-opacity duration-1000">
+                  {breathText}
+                </p>
+              </div>
+              
+              <button 
+                onClick={handleSkipMeditation}
+                className="fixed bottom-8 right-6 md:bottom-12 md:right-12 z-[100] px-4 py-2 text-[#8B7355] rounded-full hover:bg-[#FDF6E3] hover:text-[#5C4033] transition-all duration-300 text-2xl font-light flex items-center justify-center group"
+              >
+                <span className="group-hover:translate-x-1 transition-transform duration-500">→</span>
+              </button>
+            </>
+          )}
+
+          {step === 'fanning' && (
+            <div className="flex flex-col items-center justify-center w-full h-full flex-grow mt-4 md:mt-8 max-w-5xl gap-10 md:gap-16 pt-8 pb-20">
+                <div className="flex flex-col items-center w-full">
+                  <h3 className="text-[#8B7355] tracking-widest mb-2 text-base md:text-lg italic opacity-80">【每日指引】</h3>
+                  <p className="text-[#B8860B] tracking-widest mb-4 text-sm">
+                    請憑直覺，抽取一張牌
+                  </p>
+                  
+                  <div className="flex justify-center min-h-[6rem] md:min-h-[10rem]">
+                    <div className="w-16 h-24 md:w-24 md:h-36 border-2 border-dashed border-[#D2B48C]/50 rounded-md flex flex-col items-center justify-center relative bg-[#FAF7F2]/30 mt-4">
+                      {pickedCard && (
+                         <div className="absolute inset-0 animate-[fadeIn_0.5s_ease-in-out]">
+                            <CardBack />
+                         </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="relative w-full max-w-lg h-48 md:h-64 flex justify-center items-end overflow-visible">
+                  {fanCards.map((item, index) => {
+                    const totalCards = fanCards.length;
+                    const centerIndex = (totalCards - 1) / 2;
+                    const offset = index - centerIndex;
+                    // 調整扇形弧度 (將 y 偏移量縮小，角度放緩)
+                    const angle = offset * 2.5; 
+                    const x = offset * 15; 
+                    const y = Math.pow(offset, 2) * 0.4; 
+                    const isHidden = item.isSelected;
+
+                    return (
+                      <div 
+                        key={item.uniqueId}
+                        onClick={() => handleSelectCard(item)}
+                        className={`absolute bottom-0 w-16 h-24 md:w-24 md:h-36 transition-all duration-500 origin-bottom 
+                          ${isHidden ? 'opacity-0 scale-50 pointer-events-none' : 'cursor-pointer hover:-translate-y-10 hover:scale-125 shadow-sm hover:shadow-xl hover:z-50'}`}
+                        style={{
+                          transform: isHidden ? `translateX(${x}px) translateY(-50px)` : `translateX(${x}px) translateY(${y}px) rotate(${angle}deg)`,
+                          zIndex: isHidden ? 0 : 10 + index,
+                        }}
+                      >
+                        <CardBack className="transition-transform duration-300" />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {step === 'result' && pickedCard && (
+              <div className="flex flex-col items-center w-full max-w-5xl mx-auto py-4 md:py-8">
+                
+                {/* ======= 解析結果可見區塊 ======= */}
+                <div className="flex flex-col items-center w-full max-w-2xl px-4 py-8 bg-[#FAF7F2] rounded-3xl">
+                  <div className="text-center mb-8 w-full">
+                    <p className="text-[#8B7355] tracking-widest text-sm mb-3">— 宇宙給您的專屬指引 —</p>
+                  </div>
+
+                  <div className="relative w-64 h-96 md:w-72 md:h-[27rem] mb-8">
+                    <CardFront card={pickedCard} />
+                  </div>
+
+                  <div className="bg-white/60 p-6 md:p-8 rounded-2xl shadow-sm border border-[#E8DCC4]/50 w-full flex flex-col">
+                    <div className="text-center mb-4 pb-2">
+                      <h4 className="text-[#B8860B] text-2xl md:text-3xl tracking-widest font-bold mb-4">
+                        {pickedCard.name}
+                      </h4>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {pickedCard.keywords.split('、').map((kw, i) => (
+                          <span key={i} className="px-4 py-1.5 bg-[#F5DEB3]/30 text-[#6B5B4D] rounded-full text-xs md:text-sm tracking-wider border border-[#D2B48C]/50">
+                            {kw}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="text-justify">
+                      {generateDynamicReading(pickedCard)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="w-full max-w-4xl mt-10 px-6 py-8 bg-[#FDF6E3]/80 border-t-4 border-[#D2B48C] rounded-lg shadow-sm text-center flex flex-col items-center">
+                   <h4 className="text-[#B8860B] text-xl tracking-widest font-bold mb-4 flex items-center justify-center gap-2">
+                     <span>✦</span> 總結建議 <span>✦</span>
+                   </h4>
+                   <div className="text-[#5C4033] leading-loose tracking-wide text-sm md:text-base max-w-3xl mx-auto w-full">
+                     {generateOverallAdvice()}
+                   </div>
+                </div>
+
+                <div className="flex flex-col w-full max-w-sm justify-center items-center mt-12 mb-8 px-4">
+                  <button 
+                    onClick={handleReset}
+                    className="w-full px-10 py-3 bg-transparent text-[#8B7355] border border-[#D2B48C] rounded-full hover:bg-[#FDF6E3] hover:text-[#B8860B] transition-all duration-500 tracking-widest shadow-sm focus:outline-none"
+                  >
+                    心懷感激，結束占卜
+                  </button>
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
